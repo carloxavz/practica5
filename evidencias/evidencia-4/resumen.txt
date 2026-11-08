@@ -1,0 +1,19 @@
+# Fase 4 - ráfaga de 60 pedidos de 1 tinto, 20 en paralelo
+(equivalente a: seq 60 | xargs -P 20 curl -X POST $B/pedidos ..., lanzada con fetch desde la página)
+Salida: {"total":60,"conteo":{"201":60},"segundos":"1.10"}  -> 60 x 201 en 1,10 s
+
+Pantalla (muestra los últimos 20):
+  ~5 s : recibido 16, preparando 4, listo 0
+  ~15 s: recibido 2, preparando 7, listo 2, rechazados 9
+  ~30 s: recibido 0, preparando 2, listo 2, rechazados 16
+  Los números no salen en orden (p. ej. pedido 63 = "Ráfaga 60", 62 = "Ráfaga 58"); la cocina termina 51 y 50 antes que otros más viejos.
+
+Conteo real en Firestore (REST, solo lectura) de los 60 pedidos "Ráfaga":
+  22 listo
+  38 rechazado
+Inventario de tinto: 20 -> -2   (22 listos con 20 tintos: condición de carrera revisar-luego-descontar)
+Después: "Reponer inventario".
+
+Cloud Run marci-cocina: máximo 3 instancias activas (el max_instance_count), ~9-10 solicitudes simultáneas por instancia.
+Pub/Sub marci-cocina: la cola se vació en ~30-40 s; la métrica tiene retraso y al abrirla solo mostraba
+  no confirmados = 2, antigüedad = 5 s.
