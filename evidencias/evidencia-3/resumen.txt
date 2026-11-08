@@ -1,0 +1,25 @@
+# Fase 3 - apply
+Plan: 7 to add, 0 to change, 0 to destroy. Apply complete! Resources: 7 added.
+  marci-cocina (SA + Cloud Run privado, max 3 instancias, concurrencia 8), roles/datastore.user a la cocina
+  marci-invocador (SA) con roles/run.invoker SOLO sobre marci-cocina
+  agente service-NUM@gcp-sa-pubsub con roles/iam.serviceAccountTokenCreator sobre marci-invocador
+  suscripción push marci-cocina (OIDC invocador, audience=URL cocina, ack 60 s, retry 10s-60s)
+url_cocina = "https://marci-cocina-24cnlwn55q-uc.a.run.app"
+
+# curl sin token (2026-11-08 23:52:09 GMT)
+$ curl -i -X POST https://marci-cocina-24cnlwn55q-uc.a.run.app/
+HTTP/2 403
+content-type: text/html; charset=UTF-8
+server: Google Frontend
+
+# Prueba qa-navegador
+Pedido #3 "QA Fase 3" (1 tinto): recibido 0-5 s -> preparando ~6 s -> listo ~11 s (al primer intento).
+Pantalla: #1 y #2 siguen en recibido (el #2 se publicó en la fase 2 sin suscripción: se perdió); #3 listo; tinto 19.
+Log cocina:
+  18:53:10.138 INFO:cocina:Pedido 4o4ZoFWgXhEOtpB81jrf, intento de entrega desconocido
+  18:53:16.552 INFO:cocina:Pedido 4o4ZoFWgXhEOtpB81jrf listo
+run.googleapis.com/requests de la cocina:
+  18:52:09.816 POST 403 0 ms curl/8.5.0       <- curl sin token, rechazado antes del código
+  18:53:08.524 POST 204 8.003 s APIs-Google   <- push de Pub/Sub con token OIDC
+Suscripción marci-cocina: endpoint y audience = https://marci-cocina-24cnlwn55q-uc.a.run.app,
+  cuenta marci-invocador@nube-2026-ii.iam.gserviceaccount.com, ack 60 s, reintentos 10 s-60 s, retención 7 días.

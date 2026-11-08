@@ -1,0 +1,11 @@
+# Fase 2 - apply
+Plan: 2 to add, 1 to change. Apply complete! Resources: 2 added, 1 changed, 0 destroyed.
+  google_pubsub_topic.pedidos -> projects/nube-2026-ii/topics/marci-pedidos
+  google_pubsub_topic_iam_member.backend_publica (roles/pubsub.publisher sobre el tema, a marci-backend)
+  google_cloud_run_v2_service.backend actualizado con env TEMA
+
+# Prueba qa-navegador
+Pedido #2 "QA Fase 2" (1 tinto), id okse4t32mYq7kpU6GCrN -> sigue en "recibido" tras ~32 s.
+Log backend 2026-11-08 18:47:36.653:
+INFO:backend:Pedido okse4t32mYq7kpU6GCrN publicado en projects/nube-2026-ii/topics/marci-pedidos
+Consola Pub/Sub: marci-pedidos con 0 suscripciones; aviso "Se perderán los mensajes publicados en este tema".
