@@ -1,0 +1,23 @@
+# Fase 1 - apply -target del registro
+Apply complete! Resources: 7 added (6 APIs + google_artifact_registry_repository.registro = marci-imagenes)
+
+# Imágenes en Artifact Registry (gcloud artifacts docker images list)
+us-central1-docker.pkg.dev/nube-2026-ii/marci-imagenes/backend   (v1)
+us-central1-docker.pkg.dev/nube-2026-ii/marci-imagenes/cocina    (v1)
+us-central1-docker.pkg.dev/nube-2026-ii/marci-imagenes/frontend  (v1)
+Nota: backend y cocina fallaron 3 veces con "dial tcp ...:443: connect: connection refused";
+se resolvió con {"max-concurrent-uploads": 1} en /etc/docker/daemon.json de Cloud Shell.
+
+# Fase 1 - apply completo
+Apply complete! Resources: 8 added, 0 changed, 0 destroyed.
+  marci-cafeteria (Firestore), marci-backend / marci-frontend (SA + Cloud Run),
+  roles/datastore.user al backend, allUsers run.invoker en backend y frontend
+registro     = "us-central1-docker.pkg.dev/nube-2026-ii/marci-imagenes"
+url_backend  = "https://marci-backend-24cnlwn55q-uc.a.run.app"
+url_frontend = "https://marci-frontend-24cnlwn55q-uc.a.run.app"
+
+# Prueba qa-navegador
+Pedido #1 "QA Fase 1" (1 tinto, $1.500), id uoshOWdn5GR33tyEzOEz -> 201, sigue en "recibido" tras ~30 s.
+Log backend (2026-11-08 18:39:46.399):
+WARNING:backend:TEMA está vacío: el pedido uoshOWdn5GR33tyEzOEz se guardó pero nadie le avisa a la cocina
+(nota: sale con severidad "Predeterminado"/stderr, no WARNING; filtrar por textPayload:"TEMA")

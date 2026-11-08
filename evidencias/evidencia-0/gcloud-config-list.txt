@@ -1,0 +1,6 @@
+[core]
+account = carlosantonioav@ufps.edu.co
+project = nube-2026-ii
+Your active configuration is: [cloudshell-5488]
+origin https://github.com/carloxavz/practica5.git (fetch)
+Terraform v1.9.5 (~/bin/terraform), Docker 29.9.3
