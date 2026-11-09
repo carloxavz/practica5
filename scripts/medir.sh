@@ -38,7 +38,7 @@ LISTOS=$(echo "$DOCS" | jq --arg e "M-$ETQ " '[.documents[] | select(.fields.cli
          | select(.fields.estado.stringValue == "listo")] | length')
 T_ULT=$(date -d "$ULTIMO" +%s.%N)
 
-LINEA=$(printf '%s | N=%s P=%s | publicar=%.1fs | ultimo_terminado=%.1fs | listos=%s/%s | codigos: %s' \
-  "$ETQ" "$N" "$P" "$(echo "$T1 - $T0" | bc)" "$(echo "$T_ULT - $T0" | bc)" "$LISTOS" "$N" "$CODIGOS")
+LINEA=$(awk -v e="$ETQ" -v n="$N" -v p="$P" -v t0="$T0" -v t1="$T1" -v tu="$T_ULT" -v l="$LISTOS" -v c="$CODIGOS" \
+  'BEGIN { printf "%s | N=%s P=%s | publicar=%.1fs | ultimo_terminado=%.1fs | listos=%s/%s | codigos: %s", e, n, p, t1-t0, tu-t0, l, n, c }')
 mkdir -p ~/ev
 echo "$LINEA" | tee -a ~/ev/mediciones.txt
