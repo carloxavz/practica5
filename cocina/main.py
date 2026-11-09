@@ -31,6 +31,41 @@ def ahora():
     return datetime.now(timezone.utc)
 
 
+TERMINADOS = ("listo", "rechazado")
+
+
+@firestore.transactional
+def terminar(transaccion, pedido_ref, cantidades):
+    """Revisa el estado, revisa existencias y descuenta de forma atómica.
+
+    Devuelve "repetido" si el pedido ya estaba terminado, "listo" si se
+    descontó, o la lista de productos que faltan si se rechazó.
+    """
+    # En una transacción todas las lecturas van antes que las escrituras.
+    pedido = pedido_ref.get(transaction=transaccion)
+    if pedido.get("estado") in TERMINADOS:
+        return "repetido"
+
+    inventario = db().collection("inventario")
+    existencias = {
+        producto: (inventario.document(producto).get(transaction=transaccion).get("existencias") or 0)
+        for producto in cantidades
+    }
+    faltan = [p for p, cantidad in cantidades.items() if existencias[p] < cantidad]
+    if faltan:
+        transaccion.update(pedido_ref, {
+            "estado": "rechazado",
+            "motivo": "Se acabó: " + ", ".join(faltan),
+            "actualizado": ahora(),
+        })
+        return faltan
+
+    for producto, cantidad in cantidades.items():
+        transaccion.update(inventario.document(producto), {"existencias": existencias[producto] - cantidad})
+    transaccion.update(pedido_ref, {"estado": "listo", "actualizado": ahora()})
+    return "listo"
+
+
 @app.post("/")
 def recibir():
     # Pub/Sub entrega un sobre JSON: {"message": {"data": <base64>, ...},
@@ -53,7 +88,15 @@ def recibir():
         log.warning("El pedido %s no existe; se descarta el mensaje", pedido_id)
         return "", 204
 
-    pedido_ref.update({"estado": "preparando", "actualizado": ahora()})
+    # Idempotencia, primer filtro (barato): si una entrega anterior ya lo terminó,
+    # se confirma sin volver a prepararlo ni descontar nada.
+    if pedido.get("estado") in TERMINADOS:
+        log.info("Pedido %s ya estaba %s; entrega repetida, no se descuenta otra vez",
+                 pedido_id, pedido.get("estado"))
+        return "", 204
+
+    if pedido.get("estado") == "recibido":
+        pedido_ref.update({"estado": "preparando", "actualizado": ahora()})
 
     cantidades = Counter()
     for item in pedido.get("items"):
@@ -64,26 +107,18 @@ def recibir():
 
     time.sleep(TIEMPO_PREPARACION)
 
-    inventario = db().collection("inventario")
-    faltan = [
-        producto for producto, cantidad in cantidades.items()
-        if (inventario.document(producto).get().get("existencias") or 0) < cantidad
-    ]
-    if faltan:
-        pedido_ref.update({
-            "estado": "rechazado",
-            "motivo": "Se acabó: " + ", ".join(faltan),
-            "actualizado": ahora(),
-        })
-        log.info("Pedido %s rechazado, no alcanza: %s", pedido_id, faltan)
-    else:
-        # Ojo: si Pub/Sub entrega este mismo pedido otra vez, este descuento se repite.
-        lote = db().batch()
-        for producto, cantidad in cantidades.items():
-            lote.update(inventario.document(producto), {"existencias": firestore.Increment(-cantidad)})
-        lote.update(pedido_ref, {"estado": "listo", "actualizado": ahora()})
-        lote.commit()
+    # Idempotencia, filtro definitivo: revisar el estado del pedido, revisar las
+    # existencias y descontar van en UNA transacción. Si dos entregas del mismo
+    # pedido llegan a la vez a dos instancias, Firestore serializa las dos
+    # transacciones: la segunda se reintenta, ve el pedido ya terminado y no
+    # descuenta. Lo mismo evita el inventario negativo de la fase 4.
+    resultado = terminar(db().transaction(), pedido_ref, cantidades)
+    if resultado == "repetido":
+        log.info("Pedido %s lo terminó otra entrega mientras se preparaba; no se descuenta otra vez", pedido_id)
+    elif resultado == "listo":
         log.info("Pedido %s listo", pedido_id)
+    else:
+        log.info("Pedido %s rechazado, no alcanza: %s", pedido_id, resultado)
 
     # Simula que la cocina se cae justo después de terminar y antes de confirmar.
     # Pub/Sub no recibe el 2xx y vuelve a entregar el mismo pedido.
