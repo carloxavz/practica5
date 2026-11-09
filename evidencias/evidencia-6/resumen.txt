@@ -62,3 +62,14 @@ Lo que limitó: TIEMPO_PREPARACION (6 s) x número de tandas; además la contenc
 mismo documento de inventario (tinto) y los reintentos de Pub/Sub (backoff 10-60 s) cuando una transacción
 aborta; publicar desde Cloud Shell tardó 6-12 s por su red. En todas: exactamente 20 listos con 20 tintos
 (antes, en la fase 4: 22 listos y tinto en -2).
+
+## Reproducción desde cero
+terraform destroy -parallelism=1: Plan: 28 to destroy. Destroy complete! Resources: 28 destroyed. (00:54:14 -> 00:56:04 UTC)
+Espera ~6 min (nombre de la base de Firestore reservado).
+bash scripts/reproducir.sh (01:01:58 -> ~01:08 UTC):
+  Apply complete! Resources: 7 added   (-target registro + APIs)
+  build + push backend:v1, frontend:v1, cocina:v2
+  Apply complete! Resources: 21 added  (total 28)
+  url_frontend = "https://marci-frontend-24cnlwn55q-uc.a.run.app" (misma URL)
+Prueba de humo: pedido TTAStoWW3T5SrIwyEEam -> {"numero":1,"estado":"listo"}; cocina sin token: 403;
+terraform plan -detailed-exitcode -> exit=0 (sin cambios).

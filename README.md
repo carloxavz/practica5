@@ -391,7 +391,10 @@ Promedio en caliente: ~32,8 s con 3 instancias y ~57,9 s con 1 (excluyendo arran
 
 **Reproducir.** `terraform destroy` (28 recursos) y `scripts/reproducir.sh` (registro, imágenes y luego todo), sin pasos en la consola.
 
-<!-- RESULTADO_REPRODUCCION -->
+Resultado: `terraform destroy -parallelism=1` borró 28 recursos (00:54:14 → 00:56:04 UTC). Se esperaron ~6 minutos por la reserva del nombre de la base de Firestore y `bash scripts/reproducir.sh` reconstruyó todo (01:01:58 → ~01:08 UTC): 7 recursos con `-target` del registro, las tres imágenes (`backend:v1`, `frontend:v1`, `cocina:v2`) y 21 recursos más, 28 en total, con las mismas URLs. Prueba de humo después de reconstruir: un pedido nuevo (#1) quedó `listo`, `curl -X POST` a la cocina sin token respondió `403` y `terraform plan -detailed-exitcode` salió con código 0 (sin diferencias entre el código y la nube).
+
+![Reproducción: 7 + 21 recursos y URLs](evidencias/evidencia-6/reproduccion-apply.jpg)
+![Prueba de humo tras reconstruir](evidencias/evidencia-6/reproduccion-prueba.jpg)
 
 **Incidencias del entorno.** Cloud Shell rechazó conexiones (`connection refused`) cuando había muchas conexiones en paralelo; se resolvió con `max-concurrent-uploads=1` en Docker y `-parallelism=1` en Terraform.
 
