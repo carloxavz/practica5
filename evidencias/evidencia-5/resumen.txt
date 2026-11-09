@@ -1,0 +1,33 @@
+# Fase 5 - falla inyectada (PROBABILIDAD_FALLO = "0.5")
+Apply: 0 added, 1 changed (google_cloud_run_v2_service.cocina con env PROBABILIDAD_FALLO).
+Inventario repuesto: tinto = 20. 4 pedidos de 1 tinto (curl de la guía): 201 201 201 201 (00:01:26 UTC).
+
+Log de la cocina (00:02 - 00:03 UTC):
+00:02:03 INFO:cocina:Pedido 90mAXbJDJlmJ912CUmsh, intento de entrega desconocido
+00:02:03 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj, intento de entrega desconocido
+00:02:03 INFO:cocina:Pedido yiPWzDjuF9lzECns0fyV, intento de entrega desconocido
+00:02:03 INFO:cocina:Pedido D7pJpLM2yENaodwlDP9X, intento de entrega desconocido
+00:02:12 INFO:cocina:Pedido 90mAXbJDJlmJ912CUmsh listo
+00:02:12 WARNING:cocina:Falla simulada en el pedido 90mAXbJDJlmJ912CUmsh: el trabajo quedó hecho pero no se confirma
+00:02:12 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj listo
+00:02:12 WARNING:cocina:Falla simulada en el pedido q34n0WZj016mJIiIEVTj: el trabajo quedó hecho pero no se confirma
+00:02:12 INFO:cocina:Pedido yiPWzDjuF9lzECns0fyV listo
+00:02:12 WARNING:cocina:Falla simulada en el pedido yiPWzDjuF9lzECns0fyV: el trabajo quedó hecho pero no se confirma
+00:02:12 INFO:cocina:Pedido D7pJpLM2yENaodwlDP9X listo
+00:02:24 INFO:cocina:Pedido yiPWzDjuF9lzECns0fyV, intento de entrega desconocido
+00:02:24 INFO:cocina:Pedido 90mAXbJDJlmJ912CUmsh, intento de entrega desconocido
+00:02:24 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj, intento de entrega desconocido
+00:02:30 INFO:cocina:Pedido yiPWzDjuF9lzECns0fyV listo
+00:02:30 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj listo
+00:02:30 WARNING:cocina:Falla simulada en el pedido q34n0WZj016mJIiIEVTj: el trabajo quedó hecho pero no se confirma
+00:02:30 INFO:cocina:Pedido 90mAXbJDJlmJ912CUmsh listo
+00:02:44 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj, intento de entrega desconocido
+00:02:50 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj listo
+00:02:50 WARNING:cocina:Falla simulada en el pedido q34n0WZj016mJIiIEVTj: el trabajo quedó hecho pero no se confirma
+00:03:00 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj, intento de entrega desconocido
+00:03:14 INFO:cocina:Pedido q34n0WZj016mJIiIEVTj listo
+
+Veces "listo" por pedido: q34n... 4, 90mA... 2, yiPW... 2, D7pJ... 1  => 9 entregas procesadas
+LA CUENTA: 4 pedidos de 1 tinto descontaron 9 tintos (20 -> 11). Debieron ser 4 (quedar 16).
+Promedio: 9/4 = 2,25 entregas por pedido (teórico con p=0,5: 1/(1-0,5) = 2).
+Los reintentos llegan a los ~12-20 s por la retry_policy (10 s - 60 s).
