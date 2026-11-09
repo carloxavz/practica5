@@ -191,8 +191,8 @@ El plato misterioso falla siempre, y sin un tema de mensajes muertos Pub/Sub lo 
 
 | Nombre | Código | Usuario de GitHub |
 |---|---|---|
-| Juan David Marciales Niebles | (código) | JDmn195 |
-| Carlos Antonio Avendaño | (código) | carloxavz |
+| Juan David Marciales Niebles | 1152431 | JDmn195 |
+| Carlos Antonio Avendaño | 1152406 | carloxavz |
 
 El despliegue se hizo con la cuenta de Carlos (carlosantonioav@ufps.edu.co) en el proyecto `nube-2026-ii`, prefijo `marci`, región `us-central1`.
 
@@ -201,6 +201,8 @@ El despliegue se hizo con la cuenta de Carlos (carlosantonioav@ufps.edu.co) en e
 Frontend: https://marci-frontend-24cnlwn55q-uc.a.run.app
 
 Backend: https://marci-backend-24cnlwn55q-uc.a.run.app
+
+> Para no generar costos, la infraestructura se destruyó con `terraform destroy` el 2026-11-09 (01:25 UTC). Antes de la revisión se levanta de nuevo, con las mismas URLs, desde Cloud Shell con `bash scripts/reproducir.sh` (requiere `infra/terraform.tfvars` con `cocina:v2`; tarda unos 7 minutos).
 
 ## Diagrama propio
 
