@@ -310,6 +310,10 @@ Se desplegó la cocina privada, la cuenta `marci-invocador` (con `run.invoker` s
 ![Detalle de la suscripción](evidencias/evidencia-3/suscripcion-detalle.jpg)
 ![Cabecera de la suscripción](evidencias/evidencia-3/suscripcion-cabecera.jpg)
 
+Vista de teléfono (marco de 390 px de ancho), un pedido avanzando solo:
+
+<img src="evidencias/evidencia-3/telefono-preparando.jpg" alt="Pedido en preparando, vista de teléfono" width="420"> <img src="evidencias/evidencia-3/telefono-listo.jpg" alt="Pedido listo, vista de teléfono" width="420">
+
 ```
 $ curl -i -X POST https://marci-cocina-24cnlwn55q-uc.a.run.app/
 HTTP/2 403
@@ -335,6 +339,16 @@ Se lanzó una ráfaga de 60 pedidos de 1 tinto, 20 en paralelo: 60 respuestas 20
 Firestore: 22 listo, 38 rechazado
 Inventario de tinto: 20 -> -2
 ```
+
+**La cola, vista en Pub/Sub.** La gráfica *Mensajes sin confirmar por región* de `marci-cocina` (ventana de 1 h) muestra picos de unos 45 mensajes entre las 7:43 y las 7:51 p. m. (UTC-5), que corresponden a las ráfagas de 60 pedidos de la medición de la fase 6, y cómo cada pico baja a 0 en uno o dos minutos mientras la cocina vacía la cola; *Antigüedad del mensaje sin confirmar* llega a ~1 min. En la primera ráfaga la métrica todavía no había llegado al abrir la consola.
+
+![Mensajes sin confirmar: picos y vaciado de la cola](evidencias/evidencia-4/pubsub-no-confirmados-picos.jpg)
+
+**Ráfaga repetida con la cocina idempotente** (fase 6, 01:14 UTC): 60 × 201 en 1,43 s; los pedidos se ven en recibido y preparando y salen desordenados, pero el tinto termina en **0**, no en negativo: 20 listos y el resto rechazados.
+
+![Ráfaga 2: columnas recibido y preparando](evidencias/evidencia-4/rafaga2-pantalla-columnas.jpg)
+![Ráfaga 2: tinto en 0](evidencias/evidencia-4/rafaga2-tinto-0-idempotente.jpg)
+![Ráfaga 2: instancias de la cocina](evidencias/evidencia-4/cloudrun-instancias-rafaga2.jpg)
 
 ### Fase 5
 
