@@ -43,3 +43,22 @@ cocina idempotente (1 producto): 3 lecturas (pedido; pedido + inventario dentro 
   3 escrituras (preparando; inventario + listo en el commit de la transacción)
 Total por pedido: 3 lecturas + 5 escrituras, más 1 lectura por cada sondeo GET /pedidos/<id> del teléfono.
 Una entrega repetida cuesta 1 lectura extra y 0 escrituras (se corta con el primer filtro).
+
+## Medición (scripts/medir.sh: 60 pedidos de 1 tinto, 20 en paralelo con xargs -P 20, desde Cloud Shell;
+## "último terminado" = max(actualizado) en Firestore - instante del primer POST)
+| Corrida  | max instancias | publicar (s) | último terminado (s) | terminados | listos |
+|----------|----------------|--------------|----------------------|------------|--------|
+| max3-a1  | 3              | 6,9          | 54,7 (arranque en frío) | 60/60   | 20     |
+| max3-a2  | 3              | 6,1          | 32,7                 | 60/60      | 20     |
+| max3-a3  | 3              | 11,7         | 32,9                 | 60/60      | 20     |
+| max1-a1  | 1              | 10,3         | 68,6                 | 60/60      | 20     |
+| max1-a2  | 1              | 11,6         | 59,3                 | 60/60      | 20     |
+| max1-a3  | 1              | 11,3         | 56,4                 | 60/60      | 20     |
+Descartadas: max3-c2 / max3-c3 (se solaparon con otra ráfaga; c2 dio 0 listos porque la otra se llevó los tintos)
+y la primera serie (el script esperaba 60 pedidos y uno no se creó por la red de Cloud Shell).
+Promedio en caliente: 3 instancias ~32,8 s; 1 instancia ~57,9 s (excluyendo arranques en frío: 68,6 s y 54,7 s).
+Teórico: 3 inst x 8 = 24 a la vez -> 3 tandas x 6 s = 18 s; 1 inst x 8 = 8 a la vez -> 8 tandas x 6 s = 48 s.
+Lo que limitó: TIEMPO_PREPARACION (6 s) x número de tandas; además la contención de la transacción sobre el
+mismo documento de inventario (tinto) y los reintentos de Pub/Sub (backoff 10-60 s) cuando una transacción
+aborta; publicar desde Cloud Shell tardó 6-12 s por su red. En todas: exactamente 20 listos con 20 tintos
+(antes, en la fase 4: 22 listos y tinto en -2).
