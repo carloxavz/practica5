@@ -14,3 +14,7 @@ output "url_frontend" {
 output "url_cocina" {
   value = google_cloud_run_v2_service.cocina.uri
 }
+
+output "suscripcion_muertos" {
+  value = google_pubsub_subscription.muertos_lectura.name
+}

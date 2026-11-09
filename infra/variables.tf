@@ -36,3 +36,9 @@ variable "imagen_cocina" {
   description = "Imagen de la cocina en Artifact Registry, con su etiqueta"
   type        = string
 }
+
+variable "probabilidad_fallo" {
+  description = "Probabilidad (0 a 1) de que la cocina responda 500 después de terminar; solo para pruebas"
+  type        = string
+  default     = "0"
+}

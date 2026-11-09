@@ -47,6 +47,11 @@ resource "google_cloud_run_v2_service" "cocina" {
         name  = "BASE_DATOS"
         value = google_firestore_database.cafeteria.name
       }
+
+      env {
+        name  = "PROBABILIDAD_FALLO"
+        value = var.probabilidad_fallo
+      }
     }
   }
 
@@ -100,6 +105,11 @@ resource "google_pubsub_subscription" "cocina" {
     maximum_backoff = "60s"
   }
 
+  dead_letter_policy {
+    dead_letter_topic     = google_pubsub_topic.muertos.id
+    max_delivery_attempts = 5
+  }
+
   push_config {
     push_endpoint = google_cloud_run_v2_service.cocina.uri
 
@@ -112,5 +122,35 @@ resource "google_pubsub_subscription" "cocina" {
   depends_on = [
     google_cloud_run_v2_service_iam_member.invocador_cocina,
     google_service_account_iam_member.pubsub_firma_tokens,
+    google_pubsub_topic_iam_member.agente_publica_muertos,
   ]
+}
+
+# ---------- Mensajes muertos ----------
+resource "google_pubsub_topic" "muertos" {
+  name = "${var.prefijo}-muertos"
+
+  depends_on = [google_project_service.apis]
+}
+
+# Sin esta suscripción, lo que llegue al tema de muertos se pierde.
+resource "google_pubsub_subscription" "muertos_lectura" {
+  name                       = "${var.prefijo}-muertos-lectura"
+  topic                      = google_pubsub_topic.muertos.id
+  ack_deadline_seconds       = 60
+  message_retention_duration = "604800s"
+}
+
+# Para reenviar el mensaje muerto al tema de muertos.
+resource "google_pubsub_topic_iam_member" "agente_publica_muertos" {
+  topic  = google_pubsub_topic.muertos.name
+  role   = "roles/pubsub.publisher"
+  member = local.agente_pubsub
+}
+
+# Para confirmar (retirar) el mensaje de la suscripción original al moverlo.
+resource "google_pubsub_subscription_iam_member" "agente_suscriptor_cocina" {
+  subscription = google_pubsub_subscription.cocina.name
+  role         = "roles/pubsub.subscriber"
+  member       = local.agente_pubsub
 }
