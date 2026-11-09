@@ -37,6 +37,12 @@ variable "imagen_cocina" {
   type        = string
 }
 
+variable "max_instancias_cocina" {
+  description = "Máximo de instancias de la cocina en Cloud Run"
+  type        = number
+  default     = 3
+}
+
 variable "probabilidad_fallo" {
   description = "Probabilidad (0 a 1) de que la cocina responda 500 después de terminar; solo para pruebas"
   type        = string

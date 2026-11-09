@@ -1,0 +1,45 @@
+# Fase 6 - Reto
+## Apply (cocina:v2 idempotente + mensajes muertos, con -var probabilidad_fallo=0.5)
+Plan: 4 to add, 2 to change. Apply complete! Resources: 4 added, 2 changed, 0 destroyed.
+  marci-muertos (tema), marci-muertos-lectura (suscripción pull),
+  agente Pub/Sub: roles/pubsub.publisher sobre marci-muertos y roles/pubsub.subscriber sobre marci-cocina,
+  dead_letter_policy en marci-cocina (max_delivery_attempts = 5), cocina con imagen cocina:v2.
+
+## Idempotencia con PROBABILIDAD_FALLO = 0.5 (00:21:41 UTC)
+Inventario repuesto: tinto 20. 4 pedidos de 1 tinto + 1 plato misterioso.
+00:21:48 INFO:cocina:Pedido sLlrD4RFba2artjLVIhO, intento de entrega 1
+00:21:48 INFO:cocina:Pedido EkM7iS7yxDJzbygwcReW, intento de entrega 1
+00:21:48 INFO:cocina:Pedido nZjvkk2YVn919b937m2a, intento de entrega 1
+00:21:49 INFO:cocina:Pedido uAENcBhKCJfOjEwLHp8A, intento de entrega 1
+00:21:54 INFO:cocina:Pedido EkM7iS7yxDJzbygwcReW listo
+00:21:54 WARNING:cocina:Falla simulada en el pedido EkM7iS7yxDJzbygwcReW: el trabajo quedó hecho pero no se confirma
+00:21:54 INFO:cocina:Pedido nZjvkk2YVn919b937m2a listo
+00:21:55 INFO:cocina:Pedido sLlrD4RFba2artjLVIhO listo
+00:21:55 WARNING:cocina:Falla simulada en el pedido sLlrD4RFba2artjLVIhO: el trabajo quedó hecho pero no se confirma
+00:21:55 INFO:cocina:Pedido uAENcBhKCJfOjEwLHp8A listo
+00:21:55 WARNING:cocina:Falla simulada en el pedido uAENcBhKCJfOjEwLHp8A: el trabajo quedó hecho pero no se confirma
+00:22:06 INFO:cocina:Pedido sLlrD4RFba2artjLVIhO, intento de entrega 2
+00:22:06 INFO:cocina:Pedido sLlrD4RFba2artjLVIhO ya estaba listo; entrega repetida, no se descuenta otra vez
+00:22:08 INFO:cocina:Pedido uAENcBhKCJfOjEwLHp8A, intento de entrega 2
+00:22:08 INFO:cocina:Pedido uAENcBhKCJfOjEwLHp8A ya estaba listo; entrega repetida, no se descuenta otra vez
+00:22:10 INFO:cocina:Pedido EkM7iS7yxDJzbygwcReW, intento de entrega 2
+00:22:10 INFO:cocina:Pedido EkM7iS7yxDJzbygwcReW ya estaba listo; entrega repetida, no se descuenta otra vez
+RESULTADO: 7 entregas para 4 pedidos (3 repetidas), tinto 20 -> 16. EL INVENTARIO CUADRA (4 descontados).
+El número de intento ya no dice "desconocido": deliveryAttempt llega porque hay política de mensajes muertos.
+
+## Mensajes muertos (plato misterioso, id CtSpGvdBgOH0rK8xYkgT)
+00:21:49 intento de entrega 1 / 00:22:02 intento 2 / 00:22:18 intento 3 / 00:22:35 intento 4 / 00:22:55 intento 5
+$ gcloud pubsub subscriptions pull marci-muertos-lectura --auto-ack --limit=5
+data (base64 decodificado) = CtSpGvdBgOH0rK8xYkgT
+CloudPubSubDeadLetterSourceDeliveryCount=5
+CloudPubSubDeadLetterSourceSubscription=marci-cocina
+CloudPubSubDeadLetterSourceSubscriptionProject=nube-2026-ii
+CloudPubSubDeadLetterSourceTopicPublishTime=2026-11-09T00:21:48.981+00:00
+(Tras 5 intentos, ~66 s, Pub/Sub dejó de reintentar y lo movió al tema marci-muertos.)
+
+## Lecturas/escrituras de Firestore por pedido (contadas en el código)
+backend POST /pedidos: 0 lecturas, 2 escrituras (contador con Increment + documento del pedido)
+cocina idempotente (1 producto): 3 lecturas (pedido; pedido + inventario dentro de la transacción),
+  3 escrituras (preparando; inventario + listo en el commit de la transacción)
+Total por pedido: 3 lecturas + 5 escrituras, más 1 lectura por cada sondeo GET /pedidos/<id> del teléfono.
+Una entrega repetida cuesta 1 lectura extra y 0 escrituras (se corta con el primer filtro).
